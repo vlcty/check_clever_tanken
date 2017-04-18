@@ -1,0 +1,219 @@
+#!/usr/bin/perl
+use strict;
+use LWP::UserAgent;
+use Getopt::Long;
+
+my $stationID = 0;
+my $alarm = {};
+
+sub exitCritical {
+    printf("CRITICAL - %s\n", shift);
+    exit(2);
+}
+
+sub exchangeSpecialCharacters {
+    my $string = shift;
+
+    $string =~ s/&amp;/und/ig;
+    $string =~ s/ß/ss/ig;
+    $string =~ s/ +/ /ig;
+    $string =~ s/ä/ae/ig;
+    $string =~ s/ö/ae/ig;
+    $string =~ s/ü/ae/ig;
+    $string =~ s/@/at/ig;
+
+    return $string;
+}
+
+sub parseArguments {
+    my @alarmings = ();
+
+    GetOptions(
+        'station=i' => \$stationID,
+        'alarm=s' => \@alarmings
+    );
+
+    if ( $stationID !~ /^\d+$/ ) {
+        exitCritical('Station ID is not a number');
+    }
+
+    if ( $stationID <= 0 ) {
+        exitCritical('Station ID can\'t be below 1');
+    }
+
+    foreach my $currentAlarm ( @alarmings ) {
+        if ( $currentAlarm =~ m/^(.*): (.*)$/ ) {
+            $alarm->{$1} = $2;
+        }
+    }
+}
+
+sub extractFuelType {
+    my $line = shift;
+
+    if ( $line =~ /fuel-price-type"><span>(.*?)(<\/span><span class|<\/div>)/ ) {
+        return $1;
+    }
+    else {
+        return undef;
+    }
+}
+
+sub extractFuelPrice {
+    my $line = shift;
+
+    if ( $line =~ /display_preis">(\d+\.\d+) <\/span>/ ) {
+        return $1;
+    }
+    else {
+        exitCritical('Was not able to extract price from line: ' . $line);
+    }
+}
+
+sub extractStationStreet {
+    my $line = shift;
+
+    if ( $line =~ /<span itemprop="streetAddress">(.*?)<\/span>/ ) {
+        return exchangeSpecialCharacters($1);
+    }
+    else {
+        return undef;
+    }
+}
+
+sub extractStationName {
+    my $line = shift;
+
+    if ( $line =~ /<span id="main-content-fuel-station-header-name" itemprop="name">(.*?)<\/span>/ ) {
+        return exchangeSpecialCharacters($1);
+    }
+    else {
+        return undef;
+    }
+}
+
+sub convertToNagiosVariable {
+    my $string = shift;
+    $string = exchangeSpecialCharacters($string);
+
+    $string =~ s/\.//ig;
+    $string =~ s/ +/_/ig;
+    $string =~ s/-+/_/ig;
+
+    return $string;
+}
+
+sub produceUserAgent {
+    my $ua = LWP::UserAgent->new();
+    $ua->agent('Mozilla/5.0 (Macintosh; Intel Mac OS X 10.12; rv:52.0) Gecko/20100101 Firefox/52.0');
+    $ua->default_header('Referer' => 'http://www.clever-tanken.de/');
+    $ua->default_header('Accept' => 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8');
+    $ua->default_header('Accept-Language' => 'de,en-US;q=0.7,en;q=0.3');
+    $ua->default_header('Accept-Encoding' => 'gzip, deflate');
+    $ua->default_header('Connection' => 'close');
+    $ua->default_header('Upgrade-Insecure-Requests' => '1');
+    $ua->default_header('DNT' => '1');
+
+    return $ua;
+}
+
+sub generateDisplayAndPerformanceString {
+    my ( $stationName, $stationStreet, $prices ) = @_;
+
+    my $displayString = sprintf("%s %s:\n\n", $stationName, $stationStreet);
+    my $performanceString = '';
+    my $performacePrefix =
+        convertToNagiosVariable($stationName . ' ' . $stationStreet);
+    my $returnCode = 0;
+
+    foreach my $currentFuel ( sort keys %{$prices} ) {
+        # Generate a performance string part
+        $performanceString .= sprintf('%s_%s=%.2f ',
+            $performacePrefix,
+            convertToNagiosVariable($currentFuel),
+            $prices->{$currentFuel});
+
+        # Generate a display string part
+        if ( exists($alarm->{$currentFuel}) ) {
+            # Check if the current price is below the limit
+            my $priceDifference = $prices->{$currentFuel} - $alarm->{$currentFuel};
+
+            if ( $priceDifference < 0 ) {
+                $displayString .= sprintf("*%s: %.2f €/l -> %.0f ct günstiger als das Limit von %.2f €/l*\n",
+                    $currentFuel, $prices->{$currentFuel},
+                    abs($priceDifference) * 100,
+                    $alarm->{$currentFuel});
+
+                $returnCode = 1;
+
+                next; # We have what we want, so skip the rest
+            }
+        }
+
+        $displayString .= sprintf("%s: %.2f €/l\n",
+            $currentFuel, $prices->{$currentFuel});
+    }
+
+    printf("%s|%s\n", $displayString, $performanceString);
+    exit($returnCode);
+}
+
+sub analyzeStationContent {
+    my $response = shift;
+
+    my @content = split(/\n/, $response->decoded_content());
+
+    my $stationName = undef;
+    my $stationStreet = undef;
+    my $prices = {};
+
+    for ( my $currentLine = 0; $currentLine < scalar(@content); $currentLine++ ) {
+        my $currentLineString = $content[$currentLine];
+
+        if ( my $name = extractStationName($currentLineString) ) {
+            $stationName = $name;
+            next;
+        }
+
+        if ( my $street = extractStationStreet($currentLineString) ) {
+            $stationStreet = $street;
+            next;
+        }
+
+        if ( my $fuelType = extractFuelType($currentLineString) ) {
+            $prices->{$fuelType} =
+                extractFuelPrice($content[$currentLine + 3]);
+        }
+    }
+
+    $stationName = exchangeSpecialCharacters($stationName);
+    $stationStreet = exchangeSpecialCharacters($stationStreet);
+
+    if ( length($stationName) == 0 ) {
+        exitCritical('Was not able to extract station\'s name');
+    }
+
+    if ( length($stationStreet) == 0 ) {
+        exitCritical('Was not able to extract station\'s street');
+    }
+
+    generateDisplayAndPerformanceString($stationName,
+        $stationStreet, $prices);
+}
+
+sub main {
+    parseArguments();
+
+    my $ua = produceUserAgent();
+
+    my $response = $ua->get('http://www.clever-tanken.de/tankstelle_details/' . $stationID);
+
+    if ( $response->is_success() ) {
+        analyzeStationContent($response);
+    }
+    else {
+        exitCritical('Was not able to fetch page for station with id ' . $stationID);
+    }
+}
+
+main();
