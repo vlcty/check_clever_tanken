@@ -138,7 +138,16 @@ sub generateDisplayAndPerformanceString {
             # Check if the current price is below the limit
             my $priceDifference = $prices->{$currentFuel} - $alarm->{$currentFuel};
 
-            if ( $priceDifference < 0 ) {
+            if ( $priceDifference == 0 ) {
+                $displayString .= sprintf("*%s: %.2f €/l -> Limit von %.2f €/l erreicht*\n",
+                    $currentFuel, $prices->{$currentFuel},
+                    $alarm->{$currentFuel});
+
+                $returnCode = 1;
+
+                next; # We have what we want, so skip the rest
+            }
+            elsif ( $priceDifference < 0 ) {
                 $displayString .= sprintf("*%s: %.2f €/l -> %.0f ct günstiger als das Limit von %.2f €/l*\n",
                     $currentFuel, $prices->{$currentFuel},
                     abs($priceDifference) * 100,
