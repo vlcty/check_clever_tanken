@@ -127,14 +127,13 @@ sub generateDisplayAndPerformanceString {
 
     my $displayString = sprintf("%s %s:\n\n", $stationName, $stationStreet);
     my $performanceString = '';
-    my $performacePrefix =
-        convertToNagiosVariable($stationName . ' ' . $stationStreet);
+    my $performanceStringStationPrefix = convertToNagiosVariable($stationName . ' ' . $stationStreet);
     my $returnCode = 0;
 
     foreach my $currentFuel ( sort keys %{$prices} ) {
         # Generate a performance string part
         $performanceString .= sprintf('%s_%s=%.2f ',
-            $performacePrefix,
+            $performanceStringStationPrefix,
             convertToNagiosVariable($currentFuel),
             $prices->{$currentFuel});
 
