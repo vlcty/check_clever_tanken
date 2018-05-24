@@ -137,14 +137,16 @@ sub generateDisplayAndPerformanceString {
             convertToNagiosVariable($currentFuel),
             $prices->{$currentFuel});
 
-        # Generate a display string part
+        # Generate a display string part depending on a set limit
         if ( exists($alarm->{$currentFuel}) ) {
-            # Check if the current price is below the limit
+            # We have a limit set for this fule type. We now have to check if
+            # it's exactly the limit or even below the limit.
             my $priceDifference = $prices->{$currentFuel} - $alarm->{$currentFuel};
 
             if ( $priceDifference == 0 ) {
                 $displayString .= sprintf("*%s: %.2f €/l -> Limit von %.2f €/l erreicht*\n",
-                    $currentFuel, $prices->{$currentFuel},
+                    $currentFuel,
+                    $prices->{$currentFuel},
                     $alarm->{$currentFuel});
 
                 $returnCode = 1;
@@ -152,9 +154,10 @@ sub generateDisplayAndPerformanceString {
                 next; # We have what we want, so skip the rest
             }
             elsif ( $priceDifference < 0 ) {
-                $displayString .= sprintf("*%s: %.2f €/l -> %.0f ct günstiger als das Limit von %.2f €/l*\n",
-                    $currentFuel, $prices->{$currentFuel},
-                    abs($priceDifference) * 100,
+                $displayString .= sprintf("*%s: %.2f €/l -> %.0f Cent günstiger als das Limit von %.2f €/l*\n",
+                    $currentFuel,
+                    $prices->{$currentFuel},
+                    abs($priceDifference) * 100, # Prices are given in Euros, but we want the difference in cents. 1 € = 100 cents.
                     $alarm->{$currentFuel});
 
                 $returnCode = 1;
@@ -162,9 +165,13 @@ sub generateDisplayAndPerformanceString {
                 next; # We have what we want, so skip the rest
             }
         }
+        else {
+            # No limit was defined for this fuel type. So just add it without
+            # further inspection
+            $displayString .= sprintf("%s: %.2f €/l\n",
+                $currentFuel, $prices->{$currentFuel});
 
-        $displayString .= sprintf("%s: %.2f €/l\n",
-            $currentFuel, $prices->{$currentFuel});
+        }
     }
 
     printf("%s|%s\n", $displayString, $performanceString);
