@@ -11,7 +11,7 @@ sub exitCritical {
     exit(2);
 }
 
-sub exchangeSpecialCharacters {
+sub substituteSpecialCharacters {
     my $string = shift;
 
     $string =~ s/&amp;/und/ig;
@@ -74,7 +74,7 @@ sub extractStationStreet {
     my $line = shift;
 
     if ( $line =~ /<span itemprop="streetAddress">(.*?)<\/span>/ ) {
-        return exchangeSpecialCharacters($1);
+        return substituteSpecialCharacters($1);
     }
     else {
         return undef;
@@ -85,7 +85,7 @@ sub extractStationName {
     my $line = shift;
 
     if ( $line =~ /<span id="main-content-fuel-station-header-name" itemprop="name">(.*?)<\/span>/ ) {
-        return exchangeSpecialCharacters($1);
+        return substituteSpecialCharacters($1);
     }
     else {
         return undef;
@@ -94,7 +94,7 @@ sub extractStationName {
 
 sub convertToNagiosVariable {
     my $string = shift;
-    $string = exchangeSpecialCharacters($string);
+    $string = substituteSpecialCharacters($string);
 
     $string =~ s/\.//ig;
     $string =~ s/ +/_/ig;
@@ -195,8 +195,8 @@ sub analyzeStationContent {
         }
     }
 
-    $stationName = exchangeSpecialCharacters($stationName);
-    $stationStreet = exchangeSpecialCharacters($stationStreet);
+    $stationName = substituteSpecialCharacters($stationName);
+    $stationStreet = substituteSpecialCharacters($stationStreet);
 
     if ( length($stationName) == 0 ) {
         exitCritical('Was not able to extract station\'s name');
