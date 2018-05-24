@@ -185,12 +185,12 @@ sub analyzeStationContent {
         my $currentLineString = $content[$currentLine];
 
         if ( my $name = extractStationName($currentLineString) ) {
-            $stationName = $name;
+            $stationName = substituteSpecialCharacters($name);
             next;
         }
 
         if ( my $street = extractStationStreet($currentLineString) ) {
-            $stationStreet = $street;
+            $stationStreet = substituteSpecialCharacters($street);
             next;
         }
 
@@ -199,9 +199,6 @@ sub analyzeStationContent {
                 extractFuelPrice($content[$currentLine + 3]);
         }
     }
-
-    $stationName = substituteSpecialCharacters($stationName);
-    $stationStreet = substituteSpecialCharacters($stationStreet);
 
     if ( length($stationName) == 0 ) {
         exitCritical('Was not able to extract station\'s name');
