@@ -122,9 +122,31 @@ sub produceUserAgent {
     return $ua;
 }
 
+sub extractLongestFuelTypeStringLenght {
+    my $prices = shift;
+    my $observedMaximalLength = 0;
+
+    foreach my $currentFuel ( keys %{$prices} ) {
+        my $length = length($currentFuel);
+
+        if ( $length > $observedMaximalLength ) {
+            $observedMaximalLength = $length;
+        }
+    }
+
+    # We now have the length of the longest fuel type string
+    # I multiply it with -1 to get a negative number.
+    # This is because a negative number does a left alignment of the string and
+    # adds the whitespaces after it.
+    # Otherwise the whitespaces would be on the left side which looks stupid in
+    # my eyes.
+    return $observedMaximalLength * -1;
+}
+
 sub generateDisplayAndPerformanceString {
     my ( $stationName, $stationStreet, $prices ) = @_;
 
+    my $longestFuelTypeStringLength = extractLongestFuelTypeStringLenght($prices);
     my $displayString = sprintf("%s %s:\n\n", $stationName, $stationStreet);
     my $performanceString = '';
     my $performanceStringStationPrefix = convertToNagiosVariable($stationName . ' ' . $stationStreet);
@@ -144,7 +166,7 @@ sub generateDisplayAndPerformanceString {
             my $priceDifference = $prices->{$currentFuel} - $alarm->{$currentFuel};
 
             if ( $priceDifference == 0 ) {
-                $displayString .= sprintf("*%s: %.2f €/l -> Limit von %.2f €/l erreicht*\n",
+                $displayString .= sprintf("*%${longestFuelTypeStringLength}s: %.2f €/l -> Limit von %.2f €/l erreicht*\n",
                     $currentFuel,
                     $prices->{$currentFuel},
                     $alarm->{$currentFuel});
@@ -154,7 +176,7 @@ sub generateDisplayAndPerformanceString {
                 next; # We have what we want, so skip the rest
             }
             elsif ( $priceDifference < 0 ) {
-                $displayString .= sprintf("*%s: %.2f €/l -> %.0f Cent günstiger als das Limit von %.2f €/l*\n",
+                $displayString .= sprintf("*%${longestFuelTypeStringLength}s: %.2f €/l -> %.0f Cent günstiger als das Limit von %.2f €/l*\n",
                     $currentFuel,
                     $prices->{$currentFuel},
                     abs($priceDifference) * 100, # Prices are given in Euros, but we want the difference in cents. 1 € = 100 cents.
@@ -168,7 +190,7 @@ sub generateDisplayAndPerformanceString {
         else {
             # No limit was defined for this fuel type. So just add it without
             # further inspection
-            $displayString .= sprintf("%s: %.2f €/l\n",
+            $displayString .= sprintf("%${longestFuelTypeStringLength}s: %.2f €/l\n",
                 $currentFuel, $prices->{$currentFuel});
 
         }
