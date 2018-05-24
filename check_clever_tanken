@@ -11,6 +11,11 @@ sub exitCritical {
     exit(2);
 }
 
+sub exitUnknown {
+    printf("UNKNOWN - %s\n", shift);
+    exit(3);
+}
+
 sub substituteSpecialCharacters {
     my $string = shift;
 
