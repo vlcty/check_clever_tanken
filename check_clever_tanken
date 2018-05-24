@@ -39,11 +39,11 @@ sub parseArguments {
     );
 
     if ( $stationID !~ /^\d+$/ ) {
-        exitCritical('Station ID is not a number');
+        exitUnknown('Station ID has to be a number');
     }
 
     if ( $stationID <= 0 ) {
-        exitCritical('Station ID can\'t be below 1');
+        exitUnknown('Station ID can\'t be below 1');
     }
 
     foreach my $currentAlarm ( @alarmings ) {
