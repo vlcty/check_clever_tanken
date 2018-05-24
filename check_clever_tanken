@@ -110,7 +110,7 @@ sub convertToNagiosVariable {
 
 sub produceUserAgent {
     my $ua = LWP::UserAgent->new();
-    $ua->agent('Mozilla/5.0 (Macintosh; Intel Mac OS X 10.12; rv:52.0) Gecko/20100101 Firefox/52.0');
+    $ua->agent('Mozilla/5.0 (Macintosh; Intel Mac OS X 10.13; rv:60.0) Gecko/20100101 Firefox/60.0');
     $ua->default_header('Referer' => 'http://www.clever-tanken.de/');
     $ua->default_header('Accept' => 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8');
     $ua->default_header('Accept-Language' => 'de,en-US;q=0.7,en;q=0.3');
