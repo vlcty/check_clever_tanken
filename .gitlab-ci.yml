@@ -1,0 +1,15 @@
+---
+image: base/archlinux
+
+stages:
+    - syntax
+
+syntax:
+    stage: syntax
+    tags:
+        - runner
+    script:
+        - "uname -a"
+        - whoami
+        - pwd
+        - perl -c check_clever_tanken
