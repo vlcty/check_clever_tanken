@@ -12,4 +12,7 @@ syntax:
         - "uname -a"
         - whoami
         - pwd
+        # Remove leaseweb mirrors (speed issue)
+        - sed -i '/leaseweb/d' /etc/pacman.d/mirrorlist
+        - pacman -Sy perl-lwp-protocol-https
         - perl -c check_clever_tanken
