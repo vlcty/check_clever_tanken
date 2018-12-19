@@ -14,5 +14,5 @@ syntax:
         - pwd
         # Remove leaseweb mirrors (speed issue)
         - sed -i '/leaseweb/d' /etc/pacman.d/mirrorlist
-        - pacman -Sy perl-lwp-protocol-https
+        - pacman -Sy perl-lwp-protocol-https --noconfirm
         - perl -c check_clever_tanken
