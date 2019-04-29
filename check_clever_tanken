@@ -6,6 +6,9 @@ use Getopt::Long;
 my $stationID = 0;
 my $alarm = {};
 
+# Defines how may lines the fuel type and the price is apart in line counts.
+my $priceLineOffset = 9;
+
 sub exitCritical {
     printf("CRITICAL - %s\n", shift);
     exit(2);
@@ -56,7 +59,7 @@ sub parseArguments {
 sub extractFuelType {
     my $line = shift;
 
-    if ( $line =~ /fuel-price-type"><span>(.*?)(<\/span><span class|<\/div>)/ ) {
+    if ( $line =~ /price-type-name">(.*?)<\/div>/ ) {
         return $1;
     }
     else {
@@ -67,7 +70,7 @@ sub extractFuelType {
 sub extractFuelPrice {
     my $line = shift;
 
-    if ( $line =~ /display_preis">(\d+\.\d+) <\/span>/ ) {
+    if ( $line =~ /current-price-\d">(\d+\.\d+)<\/span>/ ) {
         return $1;
     }
     else {
@@ -89,7 +92,7 @@ sub extractStationStreet {
 sub extractStationName {
     my $line = shift;
 
-    if ( $line =~ /<span id="main-content-fuel-station-header-name" itemprop="name">(.*?)<\/span>/ ) {
+    if ( $line =~ /<span class="strong-title" itemprop="name">(.*?)<\/span>/ ) {
         return substituteSpecialCharacters($1);
     }
     else {
@@ -224,7 +227,7 @@ sub analyzeStationContent {
 
         if ( my $fuelType = extractFuelType($currentLineString) ) {
             $prices->{$fuelType} =
-                extractFuelPrice($content[$currentLine + 3]);
+                extractFuelPrice($content[$currentLine + $priceLineOffset]);
         }
     }
 
