@@ -7,7 +7,7 @@ my $stationID = 0;
 my $alarm = {};
 
 # Defines how may lines the fuel type and the price is apart in line counts.
-my $priceLineOffset = 9;
+my $priceLineOffset = 10;
 
 sub exitCritical {
     printf("CRITICAL - %s\n", shift);
