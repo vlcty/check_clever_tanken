@@ -2,6 +2,10 @@
 
 check_clever_tanken ist ein nach den Nagios Developer Guidelines entwickeltes Script um die Preise für Kraft- und Hilfsstoffe von der Webseite http://www.clever-tanken.de zu extrahieren.
 
+## Ein Wort der Warnung
+
+Ich bin nun E-Auto Fahrer. Damit werde ich dieses Plugin nicht mehr weiterentwickeln.
+
 ## Funktionsweise
 
 Das Script erwartet als Parameter die Tankstellen-ID. Diese findet man in der URL. Am Beispiel einer Tankstelle in meiner Umgebung:
