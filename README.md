@@ -1,22 +1,20 @@
-check_clever_tanken
-===================
+# check_clever_tanken
 
-check_clever_tanken ist ein Script für Nagios/Icinga basierte Monitoring Umgebungen und frägt die Seite von http://www.clever-tanken.de ab und extrahiert die Preise der Kraft- und Hilfsstoffe.
+check_clever_tanken ist ein nach den Nagios Developer Guidelines entwickeltes Script um die Preise für Kraft- und Hilfsstoffe von der Webseite http://www.clever-tanken.de zu extrahieren.
 
-Funktionsweise
---------------
+## Funktionsweise
 
 Das Script erwartet als Parameter die Tankstellen-ID. Diese findet man in der URL. Am Beispiel einer Tankstelle in meiner Umgebung:
 
 http://www.clever-tanken.de/tankstelle_details/23266
 
-Die Tankstelle hat die ID 23266. Diese kann ich nun an das Script übergeben:
+Diese Beispieltankstelle hat die ID 23266, die ich nun an das Script übergeben kann:
 
 ```
 ./check_clever_tanken --station 23266
 ```
 
-Das Script extrahier alle angebotenen Spritsorten aus der Webseite. Die aktuelle Ausgabe:
+Das Script extrahiert alle gefundenen Kraft- und Hilfsstoffe von der Webseite. Die Ausgabe sieht wie folgt aus:
 
 ```
 HEM Frankenstr. 11:
@@ -28,10 +26,9 @@ SuperPlus: 1.49 €/l
 |HEM_Frankenstr_11_Diesel=1.21 HEM_Frankenstr_11_Super_E10=1.39 HEM_Frankenstr_11_Super_E5=1.41 HEM_Frankenstr_11_SuperPlus=1.49
 ```
 
-Für den User gibt es eine schön formatierte Ausgabe der Preise pro Liter. Für die maschinelle Weiterverarbeitug (zum Beispiel für die Erstellung von Graphen) wird ein eigener String ausgegeben.
+Die Kenner erkennen den Performance String für die maschinelle Weiterverarbeitung.
 
-Warum HTML parsen, wenn es MTS-K APIs gibt
-------------------------------------------
+## Warum HTML parsen, wenn es die MTS-K APIs gibt
 
 Eine gute Frage! Das System der MTS-K und deren Sub-Anbieter sind toll und reichen für die meisten Anwender vollkommen aus. Eine erste Version dieses Plugins hat auch die (API von Tankerkönig)[https://creativecommons.tankerkoenig.de/] verwendet. Die MTS-K sammel aktuell nur die Daten von folgenden Kraftstoffen:
 
@@ -48,16 +45,13 @@ Es gibt aber noch mehr Kraft- und Hilfsstoffe:
 - AdBlue
 - Autogas
 
-Gerade Super Plus wird doch bestimmt häufiger verkauft, deswegen verstehe ich nicht ganz, warum die Preise nicht in der MTS-K API verfügbar sind.
-
-Auf clever-tanken.de findet man die MTS-K Preise sowie die Preise für andere Kraft- und Hilfsstoffe. Die nicht MTS-K Preise stimmen auch meistens überein. Eine Quelle für alles zu benutzen war also weitaus einfacher als zwei Systeme zu spannen.
+Gerade Super Plus wird doch bestimmt häufiger verkauft, deswegen verstehe ich nicht ganz, warum die Preise nicht über die MTS-K API verfügbar sind. Auf clever-tanken.de werden sowohl die MTS-K Preise sowie von Nutzern beigesteuerte Preise angezeigt.
 
 Einen Nachteil hat die Geschichte: Ändert die Webseite ihre Struktur, dann muss das Plugin wieder angepasst werden. Ich hoffe, dass die Seite mir keine Steine in den Weg legt und ihr Design regelmäßig ändert oder mit Hilfe von JavaScript verschleiert.
 
-Alarmierung
------------
+## Alarmierung
 
-Das Plugin kann "alarmieren", wenn ein Preis unter ein Limit fällt. Dazu können sogenannte Alarme mit übergeben werden. Zum Beispiel möchte ich mich alarmieren lassen, wenn der Preis für Super Plus an der obigen Tankstelle unter 1.50 € fällt. Der entsprechende Aufruf sieht dann wie folgt aus:
+Das Plugin kann "alarmieren", wenn ein Preis unter ein Limit fällt. Dazu können die Wunschpreise mit übergeben werden. Zum Beispiel möchte ich mich alarmieren lassen, wenn der Preis für Super Plus an der obigen Tankstelle unter 1.50 € fällt. Der entsprechende Aufruf sieht dann wie folgt aus:
 
 ```
 ./check_clever_tanken --station 23266 --alarm "SuperPlus: 1.50"
@@ -79,8 +73,7 @@ Super E5: 1.41 €/l
 
 Der Exit Code vom Plugin ist dann 1 anstelle von 0. Das führt dazu, das der Service im Nagios/Icinga gelb wird und eine Alarmierung stattfinden sollte.
 
-Integration in Icinga 2:
-------------------------
+## Integration in Icinga 2:
 
 Ein entsprechendes CheckCommand für Icinga 2 liegt in der Datei "icinga2_CheckCommand.conf".
 
